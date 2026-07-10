@@ -1,0 +1,12 @@
+# build artifacts (rebuilt inside the image)
+target/
+
+# local runtime state / secrets
+*.db
+.env
+
+# editor
+.idea/
+.zed/
+.vscode/
+.DS_Store

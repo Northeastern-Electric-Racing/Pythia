@@ -1,4 +1,0 @@
-[workspace]
-resolver = "2"
-members = ["pythia-backend", "libs/pythia-db"]
-default-members = ["pythia-backend"]
