@@ -1,18 +1,4 @@
-[package]
-name = "Pythia"
-version = "0.1.0"
-edition = "2024"
-
 [workspace]
-members = ["libs/pythia-db"]
-
-[dependencies]
-tokio = { version = "1.52.1", features = ["full", "tracing"] }
-axum = { version = "0.8.9", features = ["multipart", "macros"] }
-pythia-db = { path = "libs/pythia-db" }
-serde = { version = "1.0", features = ["derive"] }
-diesel = { version = "2.3.11", features = ["sqlite", "r2d2"] }
-dotenvy = "0.15.7"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
+resolver = "2"
+members = ["pythia-backend", "libs/pythia-db"]
+default-members = ["pythia-backend"]

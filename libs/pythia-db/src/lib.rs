@@ -56,26 +56,3 @@ pub fn run_migrations(conn: &mut SqliteConnection) -> Result<()> {
         .map_err(|e| Error::Migration(e.to_string()))?;
     Ok(())
 }
-
-/// A connection to the test-mode SQLite database.
-pub struct TestModeDb {
-    conn: SqliteConnection,
-}
-
-impl TestModeDb {
-    /// Look up a test profile by its unique name.
-    pub fn find_profile_by_name(&mut self, profile_name: &str) -> Result<Option<TestProfile>> {
-        services::profiles::find_by_name(&mut self.conn, profile_name)
-    }
-
-    /// Load every CAN message belonging to the named profile, ordered by
-    /// ascending offset.
-    ///
-    /// Returns [`Error::ProfileNotFound`] if no profile with that name exists.
-    pub fn load_profile_messages(
-        &mut self,
-        profile_name: &str,
-    ) -> Result<Vec<TestCanMessageEntry>> {
-        services::messages::get_by_profile_name(&mut self.conn, profile_name)
-    }
-}

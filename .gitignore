@@ -27,3 +27,6 @@ target
 
 # environment vars
 .env
+
+# runtime sqlite database (regenerated from migrations on startup)
+*.db
