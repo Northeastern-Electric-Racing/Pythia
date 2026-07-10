@@ -1,4 +1,6 @@
 use axum::{Json, extract::State, http::StatusCode};
+use pythia_db::TestProfile;
+use serde::Deserialize;
 
 use crate::DbPool;
 
@@ -18,4 +20,32 @@ pub async fn list_profile_names(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)??;
 
     Ok(Json(names))
+}
+
+/// Request body for [`create_profile`].
+#[derive(Deserialize)]
+pub struct NewProfileBody {
+    /// Name for the new test profile; must be unique.
+    name: String,
+}
+
+/// `POST /profiles` — create a new test profile from a JSON body
+/// `{ "name": "<name>" }`. Returns the created profile with `201 Created`, or
+/// `409 Conflict` if a profile with that name already exists.
+pub async fn create_profile(
+    State(pool): State<DbPool>,
+    Json(body): Json<NewProfileBody>,
+) -> Result<(StatusCode, Json<TestProfile>), StatusCode> {
+    let profile = tokio::task::spawn_blocking(move || {
+        let mut conn = pool.get().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        match pythia_db::services::profiles::create(&mut conn, &body.name) {
+            Ok(profile) => Ok(profile),
+            Err(pythia_db::Error::ProfileAlreadyExists(_)) => Err(StatusCode::CONFLICT),
+            Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        }
+    })
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)??;
+
+    Ok((StatusCode::CREATED, Json(profile)))
 }

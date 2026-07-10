@@ -14,7 +14,9 @@ pub mod services;
 /// Migrations embedded at compile time from this crate's `migrations/` directory.
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
-pub use models::{TestCanMessageEntry, TestProfile};
+pub use models::{
+    NewCanMessage, NewCanMessageInput, NewTestProfile, TestCanMessageEntry, TestProfile,
+};
 
 /// Errors that can occur while connecting to or querying the test database.
 #[derive(Debug, thiserror::Error)]
@@ -34,6 +36,15 @@ pub enum Error {
     /// No profile with the requested name exists.
     #[error("test profile '{0}' not found")]
     ProfileNotFound(String),
+
+    /// A profile with the requested name already exists.
+    #[error("test profile '{0}' already exists")]
+    ProfileAlreadyExists(String),
+
+    /// A CAN message violated a database constraint (e.g. out-of-range
+    /// `can_id`, unknown `mode`, or a period/mode mismatch).
+    #[error("invalid CAN message: {0}")]
+    InvalidCanMessage(String),
 
     /// A query against the database failed.
     #[error(transparent)]

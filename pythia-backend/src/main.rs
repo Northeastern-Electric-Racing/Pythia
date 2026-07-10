@@ -40,14 +40,22 @@ async fn main() {
     .expect("migration task panicked");
 
     let manager = ConnectionManager::<SqliteConnection>::new(db_url);
-    let pool: DbPool = Pool::builder()
+    let pool = Pool::builder()
         .build(manager)
         .expect("failed to build database connection pool");
 
     // Axum router
     let app = Router::new()
-        .route("/profiles", get(controllers::profiles::list_profile_names))
-        .route("/messages", get(controllers::messages::list_profile_messages))
+        .route(
+            "/profiles",
+            get(controllers::profiles::list_profile_names)
+                .post(controllers::profiles::create_profile),
+        )
+        .route(
+            "/messages",
+            get(controllers::messages::list_profile_messages)
+                .post(controllers::messages::create_profile_message),
+        )
         .with_state(pool);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")

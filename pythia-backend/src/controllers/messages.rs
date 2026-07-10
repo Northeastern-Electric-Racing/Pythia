@@ -3,7 +3,7 @@ use axum::{
     extract::{Query, State},
     http::StatusCode,
 };
-use pythia_db::TestCanMessageEntry;
+use pythia_db::{NewCanMessageInput, TestCanMessageEntry};
 use serde::Deserialize;
 
 use crate::DbPool;
@@ -33,4 +33,30 @@ pub async fn list_profile_messages(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)??;
 
     Ok(Json(messages))
+}
+
+/// `POST /messages?profile=<name>` — add a CAN message to the named profile.
+///
+/// The target profile is identified by the `profile` query parameter; the
+/// message fields come from the JSON body. Returns the created message with
+/// `201 Created`, `404 Not Found` if the profile doesn't exist, or
+/// `400 Bad Request` if the message violates a database constraint.
+pub async fn create_profile_message(
+    State(pool): State<DbPool>,
+    Query(query): Query<ProfileQuery>,
+    Json(body): Json<NewCanMessageInput>,
+) -> Result<(StatusCode, Json<TestCanMessageEntry>), StatusCode> {
+    let message = tokio::task::spawn_blocking(move || {
+        let mut conn = pool.get().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        match pythia_db::services::messages::create(&mut conn, &query.profile, body) {
+            Ok(message) => Ok(message),
+            Err(pythia_db::Error::ProfileNotFound(_)) => Err(StatusCode::NOT_FOUND),
+            Err(pythia_db::Error::InvalidCanMessage(_)) => Err(StatusCode::BAD_REQUEST),
+            Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        }
+    })
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)??;
+
+    Ok((StatusCode::CREATED, Json(message)))
 }

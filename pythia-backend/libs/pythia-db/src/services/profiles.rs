@@ -2,8 +2,9 @@
 
 use diesel::SqliteConnection;
 use diesel::prelude::*;
+use diesel::result::{DatabaseErrorKind, Error as DieselError};
 
-use crate::{Error, Result, TestProfile};
+use crate::{Error, NewTestProfile, Result, TestProfile};
 
 /// Return the names of every test profile, ordered alphabetically.
 pub fn get_all_names(conn: &mut SqliteConnection) -> Result<Vec<String>> {
@@ -28,4 +29,23 @@ pub fn find_by_name(conn: &mut SqliteConnection, profile_name: &str) -> Result<O
 pub fn get_by_name(conn: &mut SqliteConnection, profile_name: &str) -> Result<TestProfile> {
     find_by_name(conn, profile_name)?
         .ok_or_else(|| Error::ProfileNotFound(profile_name.to_owned()))
+}
+
+/// Create a new test profile with the given name, returning the inserted row.
+///
+/// Returns [`Error::ProfileAlreadyExists`] if a profile with that name already
+/// exists (the `name` column is `UNIQUE`).
+pub fn create(conn: &mut SqliteConnection, profile_name: &str) -> Result<TestProfile> {
+    use crate::schema::test_profile::dsl::test_profile;
+
+    diesel::insert_into(test_profile)
+        .values(NewTestProfile { name: profile_name })
+        .returning(TestProfile::as_returning())
+        .get_result(conn)
+        .map_err(|e| match e {
+            DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, _) => {
+                Error::ProfileAlreadyExists(profile_name.to_owned())
+            }
+            other => Error::Query(other),
+        })
 }
