@@ -5,10 +5,15 @@
 //! callers never have to touch diesel directly.
 
 use diesel::prelude::*;
-use diesel::{Connection, SqliteConnection};
+use diesel::SqliteConnection;
+use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 
 pub mod models;
 mod schema;
+pub mod services;
+
+/// Migrations embedded at compile time from this crate's `migrations/` directory.
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 pub use models::{TestCanMessageEntry, TestProfile};
 
@@ -34,10 +39,24 @@ pub enum Error {
     /// A query against the database failed.
     #[error(transparent)]
     Query(#[from] diesel::result::Error),
+
+    /// Running database migrations failed.
+    #[error("failed to run migrations: {0}")]
+    Migration(String),
 }
 
 /// Result alias for this crate's fallible operations.
 pub type Result<T> = std::result::Result<T, Error>;
+
+/// Run all pending migrations against the given connection.
+///
+/// Safe to call on an already-migrated database: diesel skips migrations that
+/// are already recorded in `__diesel_schema_migrations`.
+pub fn run_migrations(conn: &mut SqliteConnection) -> Result<()> {
+    conn.run_pending_migrations(MIGRATIONS)
+        .map_err(|e| Error::Migration(e.to_string()))?;
+    Ok(())
+}
 
 /// A connection to the test-mode SQLite database.
 pub struct TestModeDb {
@@ -45,24 +64,6 @@ pub struct TestModeDb {
 }
 
 impl TestModeDb {
-    /// Connect to the SQLite database at the given URL/path.
-    pub fn connect(database_url: &str) -> Result<Self> {
-        let conn =
-            SqliteConnection::establish(database_url).map_err(|source| Error::Connection {
-                url: database_url.to_owned(),
-                source,
-            })?;
-        Ok(Self { conn })
-    }
-
-    /// Connect using the `DATABASE_URL` environment variable, loading a `.env`
-    /// file first if one is present.
-    pub fn connect_from_env() -> Result<Self> {
-        dotenvy::dotenv().ok();
-        let database_url = std::env::var("DATABASE_URL")?;
-        Self::connect(&database_url)
-    }
-
     /// Look up a test profile by its unique name.
     pub fn find_profile_by_name(&mut self, profile_name: &str) -> Result<Option<TestProfile>> {
         use schema::test_profile::dsl::{name, test_profile};
