@@ -1,0 +1,25 @@
+<header class="pythia-header">
+  <div class="brand">
+    <mat-icon>hub</mat-icon>
+    <div class="brand-text">
+      <span class="brand-name">PYTHIA</span>
+      <span class="brand-sub">TEST MODE</span>
+    </div>
+  </div>
+  <div class="status"><span class="dot"></span> IDLE</div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active">CAN Frames</button>
+  <button class="tab" disabled title="Coming soon">Analog Out</button>
+  <button class="tab" disabled title="Coming soon">GPIO Out</button>
+</nav>
+
+<main class="content">
+  <ng-content></ng-content>
+</main>
+
+<footer class="pythia-footer">
+  <span>Pythia · HIL Test Mode</span>
+  <span>SQLite profile store</span>
+</footer>

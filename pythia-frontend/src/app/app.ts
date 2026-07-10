@@ -1,11 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
+import { ShellComponent } from './components/shell/shell';
 
 @Component({
   selector: 'app-root',
-  imports: [],
+  imports: [ShellComponent],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
 })
-export class App {
-  protected readonly title = signal('pythia-frontend');
-}
+export class App {}
