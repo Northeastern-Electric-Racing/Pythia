@@ -1,0 +1,9 @@
+[package]
+name = "Pythia"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+members = ["libs/pythia-db"]
+
+[dependencies]
