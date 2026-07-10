@@ -1,0 +1,7 @@
+.add-frame { margin-top: 24px; padding: 16px; background: var(--pythia-surface);
+  border: 1px solid var(--pythia-border); border-radius: 8px; }
+.add-frame h3 { margin: 0 0 12px; letter-spacing: 1px; opacity: 0.8; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; align-items: start; }
+.actions { display: flex; align-items: center; }
+.error { color: #b3261e; font-size: 13px; margin: 8px 0 0; }

@@ -1,0 +1,52 @@
+<section class="add-frame">
+  <h3>Add Frame</h3>
+  <form [formGroup]="form" (ngSubmit)="submit()" class="grid">
+    <mat-form-field appearance="outline">
+      <mat-label>CAN ID (hex)</mat-label>
+      <input matInput formControlName="canId" placeholder="0x201" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Format</mat-label>
+      <mat-select formControlName="format">
+        <mat-option value="std">Standard</mat-option>
+        <mat-option value="ext">Extended</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Payload (number)</mat-label>
+      <input matInput formControlName="payload" inputmode="numeric" placeholder="0" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Mode</mat-label>
+      <mat-select formControlName="mode">
+        <mat-option value="oneshot">Single Shot</mat-option>
+        <mat-option value="broadcast">Broadcast</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>T-Start (ms)</mat-label>
+      <input matInput type="number" formControlName="offsetMs" min="0" />
+    </mat-form-field>
+
+    @if (isBroadcast()) {
+      <mat-form-field appearance="outline">
+        <mat-label>Period (ms)</mat-label>
+        <input matInput type="number" formControlName="periodMs" min="1" />
+      </mat-form-field>
+    }
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="submit" [disabled]="!store.selectedProfile()">
+        <mat-icon>add</mat-icon> Add Frame
+      </button>
+    </div>
+  </form>
+
+  @if (submitError()) {
+    <p class="error">{{ submitError() }}</p>
+  }
+</section>
