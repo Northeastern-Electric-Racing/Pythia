@@ -10,6 +10,7 @@ dependencies = [
  "diesel",
  "dotenvy",
  "pythia-db",
+ "serde",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -641,6 +642,7 @@ version = "0.1.0"
 dependencies = [
  "diesel",
  "diesel_migrations",
+ "serde",
  "thiserror",
 ]
 

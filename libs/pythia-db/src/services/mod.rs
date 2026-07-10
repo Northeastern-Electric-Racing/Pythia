@@ -5,4 +5,5 @@
 //! the layer both the Pythia app's controllers and other consumers (e.g.
 //! Calypso) build on top of.
 
+pub mod messages;
 pub mod profiles;

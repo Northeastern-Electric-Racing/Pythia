@@ -1,6 +1,7 @@
 use diesel::prelude::*;
+use serde::Serialize;
 
-#[derive(Queryable, Selectable)]
+#[derive(Queryable, Selectable, Serialize)]
 #[diesel(table_name = crate::schema::test_profile)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct TestProfile {
@@ -8,7 +9,7 @@ pub struct TestProfile {
     pub name: String,
 }
 
-#[derive(Queryable, Selectable)]
+#[derive(Queryable, Selectable, Serialize)]
 #[diesel(table_name = crate::schema::can_message)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct TestCanMessageEntry {

@@ -2,4 +2,5 @@
 //! `pythia_db` service to do the actual DB work, and maps the result to an
 //! HTTP response.
 
+pub mod messages;
 pub mod profiles;

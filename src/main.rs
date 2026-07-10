@@ -47,6 +47,7 @@ async fn main() {
     // Axum router
     let app = Router::new()
         .route("/profiles", get(controllers::profiles::list_profile_names))
+        .route("/messages", get(controllers::messages::list_profile_messages))
         .with_state(pool);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")

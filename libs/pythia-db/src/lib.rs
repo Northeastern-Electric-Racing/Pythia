@@ -4,7 +4,6 @@
 //! messages, exposing the diesel models and a small connection/query API so
 //! callers never have to touch diesel directly.
 
-use diesel::prelude::*;
 use diesel::SqliteConnection;
 use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 
@@ -66,13 +65,7 @@ pub struct TestModeDb {
 impl TestModeDb {
     /// Look up a test profile by its unique name.
     pub fn find_profile_by_name(&mut self, profile_name: &str) -> Result<Option<TestProfile>> {
-        use schema::test_profile::dsl::{name, test_profile};
-
-        Ok(test_profile
-            .filter(name.eq(profile_name))
-            .select(TestProfile::as_select())
-            .first(&mut self.conn)
-            .optional()?)
+        services::profiles::find_by_name(&mut self.conn, profile_name)
     }
 
     /// Load every CAN message belonging to the named profile, ordered by
@@ -83,16 +76,6 @@ impl TestModeDb {
         &mut self,
         profile_name: &str,
     ) -> Result<Vec<TestCanMessageEntry>> {
-        use schema::can_message::dsl::{can_message, offset_ms, profile_id};
-
-        let profile = self
-            .find_profile_by_name(profile_name)?
-            .ok_or_else(|| Error::ProfileNotFound(profile_name.to_owned()))?;
-
-        Ok(can_message
-            .filter(profile_id.eq(profile.id))
-            .select(TestCanMessageEntry::as_select())
-            .order(offset_ms.asc())
-            .load(&mut self.conn)?)
+        services::messages::get_by_profile_name(&mut self.conn, profile_name)
     }
 }
