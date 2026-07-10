@@ -58,6 +58,8 @@ A CAN message as returned by the backend (`TestCanMessageEntry`):
 - `can_id` — integer. Standard frames: `0..=0x7FF`. Extended frames: `0..=0x1FFFFFFF`.
 - `is_extended` — `0` (standard / STD) or `1` (extended / EXT).
 - `data` — **JSON array of byte integers** (0–255), length 0–8. **Not** a hex string.
+  On the frontend the payload is entered as a single **number** and converted to this byte
+  array at the API boundary (see `payload.util.ts`).
 - `mode` — `"oneshot"` or `"broadcast"`.
 - `offset_ms` — integer ≥ 0 (the mockup's "T-START").
 - `period_ms` — integer > 0 for `broadcast`; `null` for `oneshot`. Broadcast **requires** a
@@ -103,23 +105,25 @@ format, so hex↔byte conversion and error mapping are isolated there.
   - `CanMode = 'oneshot' | 'broadcast'`
   - `CanFormat = 'std' | 'ext'` (maps to `is_extended` 0/1)
 
-  Note: components/store work with `data` as a `number[]` (byte array). Hex string display
-  is a presentation concern handled via the hex utility at the edges (form input + table
-  cell), not stored on the domain model.
+  Note: components/store work with `data` as a `number[]` (byte array). The single-number
+  payload entry and display is a presentation concern handled via the payload utility at the
+  edges (form input + table cell), not stored on the domain model.
 
-- **`hex.util.ts`** — pure functions:
-  - `hexToBytes(input: string): number[]` — parse space-separated hex bytes (e.g.
-    `"DE AD BE"` → `[222,173,190]`); tolerant of extra whitespace; rejects non-hex and
-    out-of-range bytes.
-  - `bytesToHex(bytes: number[]): string` — `[222,173]` → `"DE AD"` (upper, space-sep).
+- **`payload.util.ts`** — pure functions for the single-number payload. Uses `BigInt`
+  internally because 8 bytes (up to 2^64−1) exceeds JS's safe integer range:
+  - `numberToBytes(value: bigint): number[]` — big-endian byte array, minimal length,
+    ≤ 8 bytes. Rejects negatives and values ≥ 2^64.
+  - `bytesToNumber(bytes: number[]): bigint` — inverse; `[1,0]` → `256n`.
+  - `parsePayload(input: string): bigint` — parse a decimal string to `bigint`.
   - `parseCanId(input: string): number` / `formatCanId(id: number): string` — hex CAN id
     with `0x` prefix handling.
 
 - **`api/`**
   - `ProfileApiService` — `listProfiles()`, `createProfile(name)`, `deleteProfile(name)`.
   - `MessageApiService` — `listMessages(profile)`, `createMessage(profile, input)`,
-    `deleteMessage(id)`. Converts between domain `number[]` data and the wire array,
-    and maps HTTP error codes to typed app errors.
+    `deleteMessage(id)`. Passes the domain `number[]` data straight through as the wire
+    array, and maps HTTP error codes to typed app errors. (Number↔byte-array conversion
+    lives in the form/table via `payload.util`.)
 
 - **`state/profile.store.ts`** — injectable store exposing signals:
   - `profiles: Signal<string[]>`
@@ -141,16 +145,18 @@ format, so hex↔byte conversion and error mapping are isolated there.
   "New profile…" action that opens a small dialog (name input → `createProfile`, surfaces
   `409` duplicate as a field error).
 - **`CanFrameTableComponent`** — Material table over `frames`. Columns: CAN ID (hex),
-  Format chip (STD/EXT), Content (hex via `bytesToHex`), Mode chip (BCAST/1-SHOT),
-  T-Start (ms), Period (ms or "—"), and a delete button per row → `deleteFrame(id)`
-  (with confirm).
+  Format chip (STD/EXT), Content (decimal number via `bytesToNumber`), Mode chip
+  (BCAST/1-SHOT), T-Start (ms), Period (ms or "—"), and a delete button per row →
+  `deleteFrame(id)` (with confirm).
 - **`AddFrameFormComponent`** — Material reactive form:
-  - CAN ID (hex text), Format select (Standard/Extended), Content (hex, space-sep),
+  - CAN ID (hex text), Format select (Standard/Extended), Content (single decimal number),
     Mode select (Single Shot/Broadcast), T-Start (ms).
   - **Period (ms) field is shown only when Mode = Broadcast** (and required there).
   - Client-side validation mirrors DB constraints: CAN id within range for the chosen
-    format, data ≤ 8 bytes and valid hex, `offset_ms ≥ 0`, `period_ms > 0` required iff
-    broadcast. On submit → `addFrame(input)`; backend `400`/`404` surfaced as errors.
+    format, payload number ≥ 0 and fits in 8 bytes (< 2^64, so `numberToBytes` yields
+    ≤ 8 bytes), `offset_ms ≥ 0`, `period_ms > 0` required iff broadcast. On submit the
+    payload number is converted to a byte array via `numberToBytes` → `addFrame(input)`;
+    backend `400`/`404` surfaced as errors.
 
 ### Data flow
 
@@ -162,8 +168,9 @@ format, so hex↔byte conversion and error mapping are isolated there.
 5. Create/delete profile → `POST`/`DELETE /profiles` → re-fetch profile list (and clear or
    reselect selection as appropriate).
 
-Hex↔byte conversion happens at the API boundary; the store and components operate on domain
-values (numbers and `number[]`).
+The payload number↔byte-array conversion happens in the form (on submit) and table (on
+render) via `payload.util`; the store and API layer operate on the `number[]` byte array,
+matching the wire format directly.
 
 ### Error handling
 
@@ -184,13 +191,17 @@ Backend errors surface as Material snackbars (and inline field errors where rele
 ## Testing
 
 Deliberately deferred. No unit/integration tests in this effort; a separate testing effort
-will cover `hex.util`, the store, and component validation. Code should be structured to
-keep those units testable (pure hex utility, API-mockable store).
+will cover `payload.util`, the store, and component validation. Code should be structured to
+keep those units testable (pure payload utility, API-mockable store).
 
 ## Assumptions & decisions
 
 - DELETE endpoints use query params (`?id=`, `?name=`) and return `204`, matching the
   existing query-param API style. Backend owner will implement them.
+- The CAN frame payload is entered on the frontend as a single **decimal** number (up to
+  8 bytes, i.e. < 2^64, handled via `BigInt`) and converted to the backend's byte array at
+  the form boundary. CAN ID remains hex. The backend continues to store `data` as a byte
+  array.
 - Add-frame persists immediately (one `POST` per frame); no client-side batching/staging.
 - Mutations re-fetch rather than optimistically mutate local state.
 - Analog/GPIO tabs are shown-but-disabled for fidelity rather than removed.
