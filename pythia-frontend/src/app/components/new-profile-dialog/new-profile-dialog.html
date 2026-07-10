@@ -1,0 +1,15 @@
+<h2 mat-dialog-title>New Test Profile</h2>
+<mat-dialog-content>
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Profile name</mat-label>
+    <input matInput [ngModel]="name()" (ngModelChange)="name.set($event)"
+           (keyup.enter)="submit()" placeholder="PROFILE_001" />
+  </mat-form-field>
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-flat-button color="primary" [disabled]="saving()" (click)="submit()">Create</button>
+</mat-dialog-actions>

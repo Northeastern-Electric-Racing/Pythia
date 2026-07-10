@@ -1,0 +1,20 @@
+<div class="selector-row">
+  <mat-form-field appearance="outline">
+    <mat-label>Profile</mat-label>
+    <mat-select [value]="store.selectedProfile()" (selectionChange)="onSelect($event.value)">
+      @for (name of store.profiles(); track name) {
+        <mat-option [value]="name">{{ name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <button mat-flat-button color="primary" (click)="openCreate()">
+    <mat-icon>add</mat-icon> New profile
+  </button>
+
+  @if (store.selectedProfile()) {
+    <button mat-stroked-button (click)="deleteSelected()">
+      <mat-icon>delete</mat-icon> Delete profile
+    </button>
+  }
+</div>
