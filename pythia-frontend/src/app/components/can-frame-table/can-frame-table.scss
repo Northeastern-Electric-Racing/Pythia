@@ -1,0 +1,6 @@
+.frame-table { width: 100%; background: var(--pythia-surface);
+  border: 1px solid var(--pythia-border); border-radius: 8px; }
+.empty { opacity: 0.6; padding: 16px 0; }
+.chip { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px;
+  background: var(--pythia-border); color: var(--pythia-text); }
+.chip.mode { background: var(--pythia-accent); color: #fff; }

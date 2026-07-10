@@ -1,0 +1,55 @@
+@if (!store.selectedProfile()) {
+  <p class="empty">Select or create a profile to configure CAN frames.</p>
+} @else {
+  <table mat-table [dataSource]="store.frames()" class="frame-table">
+    <ng-container matColumnDef="canId">
+      <th mat-header-cell *matHeaderCellDef>CAN ID</th>
+      <td mat-cell *matCellDef="let f">{{ canId(f) }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="format">
+      <th mat-header-cell *matHeaderCellDef>Format</th>
+      <td mat-cell *matCellDef="let f">
+        <span class="chip">{{ f.is_extended ? 'EXT' : 'STD' }}</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="content">
+      <th mat-header-cell *matHeaderCellDef>Content</th>
+      <td mat-cell *matCellDef="let f">{{ content(f) }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="mode">
+      <th mat-header-cell *matHeaderCellDef>Mode</th>
+      <td mat-cell *matCellDef="let f">
+        <span class="chip mode">{{ f.mode === 'broadcast' ? 'BCAST' : '1-SHOT' }}</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="tStart">
+      <th mat-header-cell *matHeaderCellDef>T-Start (ms)</th>
+      <td mat-cell *matCellDef="let f">{{ f.offset_ms }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="period">
+      <th mat-header-cell *matHeaderCellDef>Period (ms)</th>
+      <td mat-cell *matCellDef="let f">{{ f.period_ms ?? '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let f">
+        <button mat-icon-button (click)="delete(f)" aria-label="Delete frame">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="columns"></tr>
+    <tr mat-row *matRowDef="let row; columns: columns"></tr>
+  </table>
+
+  @if (store.frames().length === 0) {
+    <p class="empty">No frames yet. Add one below.</p>
+  }
+}
