@@ -1,4 +1,5 @@
 use axum::{Router, routing::get};
+use clap::Parser;
 use diesel::Connection;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::sqlite::SqliteConnection;
@@ -11,8 +12,18 @@ type DbPool = Pool<ConnectionManager<SqliteConnection>>;
 
 mod controllers;
 
+#[derive(Parser)]
+#[command(version, about = "Pythia backend server")]
+struct Args {
+    /// Port to listen on
+    #[arg(short, long, env = "PORT", default_value_t = 3000)]
+    port: u16,
+}
+
 #[tokio::main]
 async fn main() {
+    let args = Args::parse();
+
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -58,7 +69,7 @@ async fn main() {
         )
         .with_state(pool);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
+    let listener = tokio::net::TcpListener::bind(("0.0.0.0", args.port))
         .await
         .expect("failed to bind listener");
     println!("Pythia listening on {}", listener.local_addr().unwrap());
